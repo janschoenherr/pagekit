@@ -27,27 +27,30 @@ class SiteController
      */
     public function indexAction($page = 1)
     {
-        App::on('blog.post.postLoad', function ($event) {
-            $post = $event->getEntity();
-            $post->setContent(App::content()->applyPlugins($post->getContent(), ['post' => $post, 'markdown' => $post->get('markdown'), 'readmore' => true]));
-        });
+        if (!App::node()->hasAccess(App::user())) {
+            App::abort(403, __('Insufficient User Rights.'));
+        }
 
-        $query = Post::where(['status = ?', 'date < ?'], [Post::STATUS_PUBLISHED, new \DateTime])->related('user');
+        $query = Post::where(['status = ?', 'date < ?', Post::getAccessQuery(App::user())], [Post::STATUS_PUBLISHED, new \DateTime])->related('user');
 
-        if (!$limit = $this->blog->config('posts_per_page')) {
+        if (!$limit = $this->blog->config('posts.posts_per_page')) {
             $limit = 10;
         }
 
-        $count = $query->count();
+        $count = $query->count('id');
         $total = ceil($count / $limit);
         $page  = max(1, min($total, $page));
 
         $query->offset(($page - 1) * $limit)->limit($limit)->orderBy('date', 'DESC');
 
+        foreach ($posts = $query->get() as $post) {
+            $post->setContent(App::content()->applyPlugins($post->getContent(), ['post' => $post, 'markdown' => $post->get('markdown'), 'readmore' => true]));
+        }
+
         return [
             '$view' => [
                 'title' => __('Blog'),
-                'name' => 'blog:views/site/post-index.php',
+                'name' => 'blog/posts.php',
                 'link:feed' => [
                     'rel' => 'alternate',
                     'href' => App::url('@blog/feed', [], true),
@@ -55,7 +58,7 @@ class SiteController
                     'type' => App::feed()->create($this->blog->config('feed.type'))->getMIMEType()
                 ]
             ],
-            'posts' => $query->get(),
+            'posts' => $posts,
             'params' => $this->blog->config(),
             'total' => $total,
             'page' => $page
@@ -68,11 +71,11 @@ class SiteController
     public function postAction($id = 0)
     {
         if (!$post = Post::where(['id = ?', 'status = ?', 'date < ?'], [$id, Post::STATUS_PUBLISHED, new \DateTime])->related('user')->first()) {
-            App::abort(404, __('Post with id "%id%" not found!', ['%id%' => $id]));
+            App::abort(404, __('Post not found!'));
         }
 
         if (!$post->hasAccess(App::user())) {
-            App::abort(403, __('Unable to access this post!'));
+            App::abort(403, __('Insufficient User Rights.'));
         }
 
         $post->setContent(App::content()->applyPlugins($post->getContent(), ['post' => $post, 'markdown' => $post->get('markdown')]));
@@ -81,7 +84,7 @@ class SiteController
         return [
             '$view' => [
                 'title' => __($post->getTitle()),
-                'name' => 'blog:views/site/post.php'
+                'name' => 'blog/post.php'
             ],
             'post' => $post,
             'blog' => $this->blog,
@@ -95,7 +98,6 @@ class SiteController
                 'user' => [
                     'name' => $user->getName(),
                     'isAuthenticated' => $user->isAuthenticated(),
-                    'canView' => $user->hasAccess('blog: view comments'),
                     'canComment' => $user->hasAccess('blog: post comments'),
                 ],
 
@@ -109,6 +111,10 @@ class SiteController
      */
     public function feedAction($type = '')
     {
+        if (!App::node()->hasAccess(App::user())) {
+            App::abort(403, __('Insufficient User Rights.'));
+        }
+
         $site = App::module('system/site');
         $feed = App::feed()->create($type ?: $this->blog->config('feed.type'), [
             'title' => $site->config('title'),

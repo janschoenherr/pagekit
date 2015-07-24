@@ -4,7 +4,6 @@ namespace Pagekit\User\Controller;
 
 use Pagekit\Application as App;
 use Pagekit\Application\Exception;
-use Pagekit\Database\Connection;
 use Pagekit\User\Model\Role;
 use Pagekit\User\Model\User;
 
@@ -42,10 +41,7 @@ class UserApiController
         }
 
         if ($role) {
-            $query->whereExists(function ($query) use ($role) {
-                $query->from('@system_user_role ur')
-                    ->where(['@system_user.id = ur.user_id', 'ur.role_id' => (int) $role]);
-            });
+            $query->where('roles REGEXP '.App::db()->quote("(^|,)($role)($|,)"));
         }
 
         if ($access) {
@@ -61,7 +57,7 @@ class UserApiController
         $count   = $query->count();
         $pages   = ceil($count / $limit);
         $page    = max(0, min($pages - 1, $page));
-        $users   = array_values($query->offset($page * $limit)->limit($limit)->related('roles')->orderBy($order[1], $order[2])->get());
+        $users   = array_values($query->offset($page * $limit)->limit($limit)->orderBy($order[1], $order[2])->get());
 
         return compact('users', 'pages', 'count');
     }
@@ -71,15 +67,19 @@ class UserApiController
      */
     public function getAction($id)
     {
-        return User::find($id);
+        if (!$user = User::find($id)) {
+            App::abort(404, 'User not found.');
+        }
+
+        return $user;
     }
 
     /**
      * @Route("/", methods="POST")
      * @Route("/{id}", methods="POST", requirements={"id"="\d+"})
-     * @Request({"user": "array", "password", "roles": "array", "id": "int"}, csrf=true)
+     * @Request({"user": "array", "password", "id": "int"}, csrf=true)
      */
-    public function saveAction($data, $password = null, $roles = null, $id = 0)
+    public function saveAction($data, $password = null, $id = 0)
     {
         try {
 
@@ -94,7 +94,7 @@ class UserApiController
                     App::abort(400, __('Password required.'));
                 }
 
-                $user = new User;
+                $user = User::create();
                 $user->setRegistered(new \DateTime);
             }
 
@@ -120,13 +120,12 @@ class UserApiController
                 $user->setPassword(App::get('auth.password')->hash($password));
             }
 
-            if (null !== $roles && App::user()->hasAccess('user: manage user permissions')) {
+            $key    = array_search(Role::ROLE_ADMINISTRATOR, @$data['roles'] ?: []);
+            $add    = false !== $key && !$user->isAdministrator();
+            $remove = false === $key && $user->isAdministrator();
 
-                if ($self && $user->hasRole(Role::ROLE_ADMINISTRATOR) && (!$roles || !in_array(Role::ROLE_ADMINISTRATOR, $roles))) {
-                    $roles[] = Role::ROLE_ADMINISTRATOR;
-                }
-
-                $user->setRoles($roles ? Role::query()->whereIn('id', $roles)->get() : []);
+            if (($self && $remove) || !App::user()->isAdministrator() && ($remove || $add)) {
+                App::abort(403, 'Cannot add/remove Admin Role.');
             }
 
             unset($data['access'], $data['login'], $data['registered']);
@@ -134,7 +133,7 @@ class UserApiController
             $user->validate();
             $user->save($data);
 
-            return ['message' => $id ? __('User saved.') : __('User created.'), 'user' => $user];
+            return ['message' => 'success', 'user' => $user];
 
         } catch (Exception $e) {
             App::abort(400, $e->getMessage());
@@ -155,7 +154,7 @@ class UserApiController
             $user->delete();
         }
 
-        return ['message' => __('Success')];
+        return ['message' => 'success'];
     }
 
     /**
@@ -168,7 +167,7 @@ class UserApiController
             $this->saveAction($data, null, null, isset($data['id']) ? $data['id'] : 0);
         }
 
-        return ['message' => __('Users saved.')];
+        return ['message' => 'success'];
     }
 
     /**
@@ -181,25 +180,6 @@ class UserApiController
             $this->deleteAction($id);
         }
 
-        return ['message' => __('Users deleted.')];
-    }
-
-    /**
-     * Gets the permission SQL.
-     *
-     * @param  string $permission
-     * @return string
-     */
-    protected function getPermissionSql($permission)
-    {
-        /** @var Connection $db */
-        $db   = App::db();
-        $expr = $db->getExpressionBuilder();
-        $col  = $db->getDatabasePlatform()->getConcatExpression($db->quote(','), 'r.permissions', $db->quote(','));
-
-        return (string) $expr->orX(
-            $expr->eq('r.id', Role::ROLE_ADMINISTRATOR),
-            $expr->comparison($col, 'LIKE', App::db()->quote("%,$permission,%"))
-        );
+        return ['message' => 'success'];
     }
 }

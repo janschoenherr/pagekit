@@ -12,12 +12,12 @@
 
     module.exports = {
 
-        props: ['node', 'form', 'type'],
+        inherit: true,
 
         section: {
             label: 'Settings',
             priority: 0,
-            active: 'blog$'
+            active: '^blog$'
         },
 
         template: __vue_template__

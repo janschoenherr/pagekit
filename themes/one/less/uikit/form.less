@@ -46,6 +46,7 @@
 @form-stacked-font-weight:                      normal;
 
 @form-horizontal-label-margin-top:              7px;
+@form-horizontal-controls-text-padding-top:     7px;
 
 @form-icon-font-size:                           @global-font-size;
 @form-icon-color:                               @global-muted-color;
@@ -61,7 +62,7 @@
 // Component
 // ========================================================================
 
-.hook-form() { border-radius: @global-border-radius; }
+.hook-form() {}
 
 // Focus state
 .hook-form-focus() {}
@@ -103,7 +104,6 @@
 .hook-form-stacked-label() {
     font-size: @form-stacked-font-size;
     line-height: @form-stacked-line-height;
-    text-transform: uppercase;
 }
 
 .hook-form-horizontal-label() {}

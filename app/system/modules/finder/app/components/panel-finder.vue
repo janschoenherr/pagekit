@@ -57,11 +57,10 @@
             <div class="uk-progress-bar" v-style="width: upload.progress + '%'"></div>
         </div>
 
-        <div class="uk-overflow-container">
+        <div class="uk-overflow-container tm-overflow-container">
             <partial name="{{ view }}"></partial>
+            <h3 class="uk-h1 uk-text-muted uk-text-center" v-show="!hasItems">{{ 'No files found.' | trans }}</h3>
         </div>
-
-        <h3 class="uk-h1 uk-text-muted uk-text-center" v-show="!hasItems">{{ 'No files found.' | trans }}</h3>
 
     </div>
 
@@ -181,12 +180,9 @@
             },
 
             getSelected: function () {
-
-                var path = this.getFullPath();
-
                 return this.selected.map(function (name) {
-                    return path+name;
-                });
+                    return _.find(this.items, 'name', name).url;
+                }, this);
             },
 
             removeSelection: function() {
@@ -202,7 +198,8 @@
                     name = name.targetVM.$data.name;
                 }
 
-                var index  = this.selected.indexOf(name);
+                var index = this.selected.indexOf(name);
+
                 -1 === index ? this.selected.push(name) : this.selected.splice(index, 1);
             },
 
@@ -262,7 +259,11 @@
             },
 
             isImage: function (url) {
-                return url.match(/\.(?:gif|jpe?g|png|svg)/i);
+                return url.match(/\.(?:gif|jpe?g|png|svg)$/i);
+            },
+
+            isVideo: function (url) {
+                return url.match(/\.(mpeg|ogv|mp4|webm|wmv)$/i);
             },
 
             command: function (cmd, params) {

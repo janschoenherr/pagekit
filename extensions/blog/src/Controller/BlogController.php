@@ -13,7 +13,7 @@ use Pagekit\User\Model\Role;
 class BlogController
 {
     /**
-     * @Access("blog: manage content")
+     * @Access("blog: manage own posts || blog: manage all posts")
      * @Request({"filter": "array", "page":"int"})
      */
     public function postAction($filter = null, $page = 0)
@@ -26,6 +26,7 @@ class BlogController
             '$data' => [
                 'statuses' => Post::getStatuses(),
                 'authors'  => Post::getAuthors(),
+                'canEditAll' => App::user()->hasAccess('blog: manage all posts'),
                 'config'   => [
                     'filter' => $filter,
                     'page'   => $page
@@ -36,7 +37,7 @@ class BlogController
 
     /**
      * @Route("/post/edit", name="post/edit")
-     * @Access("blog: manage content")
+     * @Access("blog: manage own posts || blog: manage all posts")
      * @Request({"id": "int"})
      */
     public function editAction($id = 0)
@@ -51,7 +52,7 @@ class BlogController
 
                 $module = App::module('blog');
 
-                $post = new Post;
+                $post = Post::create();
                 $post->setUser(App::user());
                 $post->setStatus(Post::STATUS_DRAFT);
                 $post->setDate(new \DateTime);
@@ -60,6 +61,24 @@ class BlogController
                 $post->set('title', $module->config('posts.show_title'));
                 $post->set('markdown', $module->config('posts.markdown_enabled'));
             }
+
+            $user = App::user();
+            if(!$user->hasAccess('blog: manage all posts') && $post->getUserId() !== $user->getId()) {
+                App::abort(403, __('Insufficient User Rights.'));
+            }
+
+            $roles = App::db()->createQueryBuilder()
+                ->from('@system_role')
+                ->where(['id' => Role::ROLE_ADMINISTRATOR])
+                ->orWhere('permissions REGEXP '.App::db()->quote('(^|,)(blog: manage all posts|blog: manage own posts)($|,)'))
+                ->execute('id')
+                ->fetchAll(\PDO::FETCH_COLUMN);
+
+            $authors = App::db()->createQueryBuilder()
+                ->from('@system_user')
+                ->where('roles REGEXP '.App::db()->quote('(^|,)('.implode('|', $roles).')($|,)'))
+                ->execute('id, username')
+                ->fetchAll();
 
             return [
                 '$view' => [
@@ -70,11 +89,8 @@ class BlogController
                     'post'     => $post,
                     'statuses' => Post::getStatuses(),
                     'roles'    => array_values(Role::findAll()),
-                    'authors'  => App::db()->createQueryBuilder()
-                        ->from('@system_user')
-                        ->where('id IN (SELECT user_id FROM @system_user_role WHERE role_id > 2)')
-                        ->execute('id, username')
-                        ->fetchAll()
+                    'canEditAll' => $user->hasAccess('blog: manage all posts'),
+                    'authors'  => $authors
                 ],
                 'post' => $post
             ];

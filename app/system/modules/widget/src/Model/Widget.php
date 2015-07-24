@@ -7,7 +7,7 @@ use Pagekit\System\Model\DataTrait;
 use Pagekit\User\Model\AccessTrait;
 
 /**
- * @Entity(tableClass="@system_widget", eventPrefix="system.widget")
+ * @Entity(tableClass="@system_widget")
  */
 class Widget implements WidgetInterface
 {
@@ -26,7 +26,7 @@ class Widget implements WidgetInterface
     protected $type;
 
     /** @Column(type="integer") */
-    protected $status = 0;
+    protected $status = 1;
 
     /** @Column(name="nodes", type="simple_array") */
     protected $nodes = [];

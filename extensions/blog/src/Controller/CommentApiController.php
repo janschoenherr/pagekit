@@ -21,7 +21,6 @@ class CommentApiController
     }
 
     /**
-     * @Access("blog: view comments")
      * @Route("/", methods="GET")
      * @Request({"filter": "array", "post":"int", "page":"int", "limit":"int"})
      */
@@ -109,7 +108,7 @@ class CommentApiController
                 App::abort(403, __('Insufficient User Rights.'));
             }
 
-            $comment = new Comment;
+            $comment = Comment::create();
 
             if ($this->user->isAuthenticated()) {
                 $data['author'] = $this->user->getName();

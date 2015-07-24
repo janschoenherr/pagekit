@@ -5,7 +5,6 @@ namespace Pagekit\User\Controller;
 use Pagekit\Application as App;
 use Pagekit\Application\Exception;
 use Pagekit\Module\Module;
-use Pagekit\User\Model\Role;
 use Pagekit\User\Model\User;
 
 class RegistrationController
@@ -35,7 +34,7 @@ class RegistrationController
         return [
             '$view' => [
                 'title' => __('User Registration'),
-                'name'  => 'system/user:views/site/registration.php'
+                'name'  => 'system/user/registration.php'
             ]
         ];
     }
@@ -60,14 +59,13 @@ class RegistrationController
                 throw new Exception(__('Invalid Password.'));
             }
 
-            $user = new User;
+            $user = User::create();
             $user->setRegistered(new \DateTime);
             $user->setName(@$data['name']);
             $user->setUsername(@$data['username']);
             $user->setEmail(@$data['email']);
             $user->setPassword(App::get('auth.password')->hash($password));
             $user->setStatus(User::STATUS_BLOCKED);
-            $user->setRoles(Role::where(['id' => Role::ROLE_AUTHENTICATED])->get());
 
             $token = App::get('auth.random')->generateString(32);
             $admin = $this->module->config('registration') == 'approval';

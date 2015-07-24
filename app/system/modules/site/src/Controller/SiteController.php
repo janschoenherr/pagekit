@@ -5,6 +5,7 @@ namespace Pagekit\Site\Controller;
 use Pagekit\Application as App;
 use Pagekit\Kernel\Exception\NotFoundException;
 use Pagekit\Site\Model\Node;
+use Pagekit\User\Model\Role;
 
 /**
  * @Access("site: manage site")
@@ -24,7 +25,7 @@ class SiteController
         return [
             '$view' => [
                 'title' => __('Pages'),
-                'name'  => 'system/site:views/index.php'
+                'name'  => 'system/site/admin/index.php'
             ],
             '$data' => [
                 'theme' => App::theme(),
@@ -45,7 +46,7 @@ class SiteController
         if (is_numeric($id)) {
             $node = Node::find($id);
         } else {
-            $node = new Node();
+            $node = Node::create();
             $node->setType($id);
 
             if ($menu && !App::menu($menu)) {
@@ -66,11 +67,13 @@ class SiteController
         return [
             '$view' => [
                 'title' => __('Pages'),
-                'name'  => 'system/site:views/edit.php'
+                'name'  => 'system/site/admin/edit.php'
             ],
             '$data' => [
                 'node' => $node,
-                'type' => $type
+                'type' => $type,
+                'roles' => array_values(Role::findAll())
+
             ]
         ];
     }
@@ -84,7 +87,7 @@ class SiteController
         return [
             '$view' => [
                 'title' => __('Settings'),
-                'name'  => 'system/site:views/settings.php'
+                'name'  => 'system/site/admin/settings.php'
             ],
             '$data' => [
                 'config' => App::module('system/site')->config(['title', 'description', 'maintenance.', 'icons.', 'code.'])

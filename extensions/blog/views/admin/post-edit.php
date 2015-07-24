@@ -1,4 +1,4 @@
-<?php $view->style('codemirror'); $view->script('post-edit', 'blog:app/bundle/post-edit.js', ['vue', 'input-image', 'uikit-datepicker', 'uikit-timepicker', 'editor']) ?>
+<?php $view->style('codemirror'); $view->script('post-edit', 'blog:app/bundle/post-edit.js', ['vue', 'uikit-datepicker', 'uikit-timepicker', 'editor']) ?>
 
 <form id="post" class="uk-form uk-form-stacked" name="form" v-on="valid: save" v-cloak>
 
@@ -42,7 +42,14 @@
                 <div class="uk-form-row">
                     <label for="form-image" class="uk-form-label">{{ 'Image' | trans }}</label>
                     <div class="uk-form-controls">
-                        <input-image src="{{@ post.data.image }}"></input-image>
+                        <input-image source="{{@ post.data.image }}"></input-image>
+                    </div>
+                </div>
+
+                <div class="uk-form-row">
+                    <label for="form-slug" class="uk-form-label">{{ 'Slug' | trans }}</label>
+                    <div class="uk-form-controls">
+                        <input id="form-slug" class="uk-width-1-1" type="text" v-model="post.slug">
                     </div>
                 </div>
                 <div class="uk-form-row">
@@ -51,7 +58,7 @@
                         <select id="form-status" class="uk-width-1-1" v-model="post.status" options="statuses"></select>
                     </div>
                 </div>
-                <div class="uk-form-row">
+                <div class="uk-form-row" v-if="data.canEditAll">
                     <label for="form-author" class="uk-form-label">{{ 'Author' | trans }}</label>
                     <div class="uk-form-controls">
                         <select id="form-author" class="uk-width-1-1" v-model="post.user_id" options="authors"></select>
@@ -77,12 +84,6 @@
                     </div>
                 </div>
                 <div class="uk-form-row">
-                    <label for="form-slug" class="uk-form-label">{{ 'Slug' | trans }}</label>
-                    <div class="uk-form-controls">
-                        <input id="form-slug" class="uk-width-1-1" type="text" v-model="post.slug">
-                    </div>
-                </div>
-                <div class="uk-form-row">
                     <span class="uk-form-label">{{ 'Restrict Access' | trans }}</span>
                     <div class="uk-form-controls uk-form-controls-text">
                         <p v-repeat="role: data.roles" class="uk-form-controls-condensed">
@@ -92,9 +93,6 @@
                 </div>
                 <div class="uk-form-row">
                     <span class="uk-form-label">{{ 'Options' | trans }}</span>
-                    <div class="uk-form-controls">
-                        <label><input type="checkbox" v-model="post.data.title" value="1"> {{ 'Show Title' | trans }}</label>
-                    </div>
                     <div class="uk-form-controls">
                         <label><input type="checkbox" v-model="post.data.markdown" value="1"> {{ 'Enable Markdown' | trans }}</label>
                     </div>

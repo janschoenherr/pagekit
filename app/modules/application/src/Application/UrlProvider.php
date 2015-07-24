@@ -65,6 +65,8 @@ class UrlProvider
 
         if ($referenceType === UrlGenerator::ABSOLUTE_URL) {
             $url = $request->getSchemeAndHttpHost().$url;
+        } elseif ($referenceType === self::BASE_PATH) {
+            $url = '';
         }
 
         return $url;
@@ -161,7 +163,13 @@ class UrlProvider
      */
     public function getStatic($path, $parameters = [], $referenceType = UrlGenerator::ABSOLUTE_PATH)
     {
-        return $this->parseQuery($this->file->getUrl($this->locator->get($path) ?: $path, $referenceType), $parameters);
+        $url = $this->file->getUrl($this->locator->get($path) ?: $path, $referenceType === self::BASE_PATH ? false : $referenceType);
+
+        if ($referenceType === self::BASE_PATH) {
+            $url = substr($url, strlen($this->router->getRequest()->getBaseUrl()));
+        }
+
+        return $this->parseQuery($url, $parameters);
     }
 
     /**

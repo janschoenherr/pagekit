@@ -4,8 +4,8 @@
         <label for="form-status" class="uk-form-label">{{ 'Status' | trans }}</label>
         <div class="uk-form-controls">
             <select id="form-status" class="uk-width-1-1" v-model="widget.status">
-                <option value="1">{{ 'Enabled' | trans }}</option>
                 <option value="0">{{ 'Disabled' | trans }}</option>
+                <option value="1">{{ 'Enabled' | trans }}</option>
             </select>
         </div>
     </div>
@@ -21,12 +21,6 @@
             <p v-repeat="role: config.roles" class="uk-form-controls-condensed">
                 <label><input type="checkbox" value="{{ role.id }}" v-checkbox="widget.roles"> {{ role.name }}</label>
             </p>
-        </div>
-    </div>
-    <div class="uk-form-row">
-        <span class="uk-form-label">{{ 'Options' | trans }}</span>
-        <div class="uk-form-controls">
-            <label><input type="checkbox" v-model="widget.data.show_title"> {{ 'Show Title' | trans }}</label>
         </div>
     </div>
 

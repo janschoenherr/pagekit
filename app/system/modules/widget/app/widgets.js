@@ -50,8 +50,8 @@ module.exports = window.Widgets = Vue.extend({
 
     components: {
 
-        'assignment': require('./components/widget-assignment.vue'),
-        'widget-text': require('./components/widget-text.vue')
+        appearance: require('./components/widget-appearance.vue'),
+        assignment: require('./components/widget-assignment.vue')
 
     }
 

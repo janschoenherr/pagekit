@@ -80,10 +80,7 @@ module.exports = {
         },
 
         setFrontpage: function (node) {
-
-            node.frontpage = true;
-
-            this.Nodes.save({id: node.id}, {node: node}, function () {
+            this.Nodes.save({id: 'frontpage'}, {id: node.id}, function () {
                 this.load();
                 UIkit.notify('Frontpage updated.');
             });
@@ -223,7 +220,15 @@ module.exports = {
                     vm.Nodes.save({id: 'updateOrder'}, {menu: vm.menu.id, nodes: nestable.list()}, function () {
 
                         // @TODO reload everything on reorder really needed?
-                        //vm.load().success(function () { el.remove(); });
+                        vm.load().success(function () {
+
+                            // hack for weird flickr bug
+                            if (el.parent()[0] === nestable.element[0]) {
+                                setTimeout(function() {
+                                    el.remove();
+                                }, 50);
+                            }
+                        });
 
                     }).error(function() {
                         UIkit.notify(this.$trans('Reorder failed.'), 'danger');
@@ -259,8 +264,12 @@ module.exports = {
 
             computed: {
 
-                url: function () {
-                    return this.$url(this.node.frontpage ? '' : this.node.path.replace(/^\/+/, ''));
+                isFrontpage: function () {
+                    return this.node.url === '/';
+                },
+
+                type: function() {
+                    return this.getType(this.node);
                 }
 
             }

@@ -3,19 +3,18 @@
 namespace Pagekit\Page\Controller;
 
 use Pagekit\Application as App;
-use Pagekit\Kernel\Exception\NotFoundException;
 use Pagekit\Page\Model\Page;
 
 class SiteController
 {
-    /**
-     * @Route("/{id}", name="id")
-     * @Request({"id" : "int"})
-     */
     public function indexAction($id = 0)
     {
         if (!$page = Page::find($id)) {
-            throw new NotFoundException(__('Page not found!'));
+            App::abort(404, __('Page not found.'));
+        }
+
+        if (!App::node()->hasAccess(App::user())) {
+            App::abort(403, __('Insufficient User Rights.'));
         }
 
         $page->setContent(App::content()->applyPlugins($page->getContent(), ['page' => $page, 'markdown' => $page->get('markdown')]));

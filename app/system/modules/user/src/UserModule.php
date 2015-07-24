@@ -19,9 +19,7 @@ class UserModule extends Module
         $app['user'] = function ($app) {
 
             if (!$user = $app['auth']->getUser()) {
-                $user  = new User;
-                $roles = Role::where(['id' => Role::ROLE_ANONYMOUS])->get();
-                $user->setRoles($roles);
+                $user = User::create(['roles' => [Role::ROLE_ANONYMOUS]]);
             }
 
             return $user;
