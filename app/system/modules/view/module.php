@@ -50,7 +50,7 @@ return [
         },
 
         'view.data' => function ($event, $data) use ($app) {
-            $data->add('$pagekit', ['url' => $app['router']->getContext()->getBaseUrl(), 'csrf' => $app['csrf']->generate()]);
+            $data->add('$pagekit', ['url' =>$app['url']->base(true). '/'. $app['router']->getContext()->getBaseUrl(true), 'csrf' => $app['csrf']->generate()]);
         },
 
         'view.styles' => function ($event, $styles) {
